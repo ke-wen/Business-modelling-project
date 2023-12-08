@@ -1,0 +1,164 @@
+import datetime
+
+# Class representing an individual item in the shop
+class Item:
+    _id_counter = 1  # Static variable for unique ID assignment
+
+    def __init__(self, name, item_type, price, expiration_date):
+        self.id = Item._id_counter  # Assign a unique ID to each item
+        Item._id_counter += 1       # Increment ID counter for the next item
+        self.name = name            # Name of the item
+        self.item_type = item_type  # Type of the item (luxury, essential, gift)
+        self.price = price          # Price of the item
+        self.expiration_date = expiration_date  # Expiration date of the item
+
+    def __str__(self):
+        # String representation of the item details
+        return (f"ID: {self.id}, Name: {self.name}, Type: {self.item_type}, "
+                f"Price: ${self.price}, Expiration Date: {self.expiration_date}")
+
+# Class for managing stock control in the shop
+class StockControl:
+    def __init__(self):
+        self.items = []                 # List to store all items
+        self.item_counts = {'luxury': 0, 'essential': 0, 'gift': 0}  # Dictionary to keep count of each item type
+
+    def add_item(self, name, item_type, price, expiration_date):
+        # Add a new item to the stock
+        new_item = Item(name, item_type, price, expiration_date)
+        self.items.append(new_item)
+        self.item_counts[item_type] += 1  # Increment the count for the item type
+
+    def view_items(self):
+        # Display all items in stock and the count of each type
+        self.remove_expired_items()  # Automatically remove expired items before viewing
+        print(f"\nStocks of each type of good: {self.item_counts}")  # Print the counts of each item type
+        for item in self.items:
+            print(item)
+
+    def delete_item(self, item_id):
+        # Remove an item from the stock using its ID
+        item_to_delete = next((item for item in self.items if item.id == item_id), None)
+        if item_to_delete:
+            self.items.remove(item_to_delete)
+            self.item_counts[item_to_delete.item_type] -= 1  # Decrement the count for the item type
+
+    def remove_expired_items(self):
+        # Remove items that have passed their expiration date
+        today = datetime.date.today()
+        for item in list(self.items):  # Iterate over a copy of the list
+            if item.expiration_date <= today:
+                self.items.remove(item)
+                self.item_counts[item.item_type] -= 1  # Decrement the count for the item type
+
+    def get_item_by_id(self, item_id):
+        # Find and return an item with a specific ID
+        return next((item for item in self.items if item.id == item_id), None)
+    
+class Basket:
+    VAT_RATES = {'luxury': 0.20, 'essential': 0.10, 'gift': 0.05}
+
+    def __init__(self):
+        self.items = []  # List to store items added to the basket
+
+    def add_item(self, item):
+        # Add an item to the basket
+        self.items.append(item)
+
+    def calculate_total(self):
+        # Calculate the total cost of items in the basket, including VAT
+        total_cost = 0
+        for item in self.items:
+            price = item.price
+            vat = self.VAT_RATES[item.item_type]
+            total_cost += price * (1 + vat)
+        return total_cost
+
+    def checkout(self, stock_control):
+        # Perform checkout: remove items from stock and clear the basket
+        for item in self.items:
+            stock_control.delete_item(item.id)
+        total_cost = self.calculate_total()
+        self.items.clear()  # Clear the basket after checkout
+        return total_cost
+
+
+class ChangeCalculator:
+    def __init__(self):
+        # Define the denominations of Euro notes and coins
+        self.denominations = [50, 20, 10, 5, 1, 0.50, 0.20, 0.10, 0.05, 0.02, 0.01]
+
+    def calculate_change(self, total, paid):
+        # Calculate the change to be given
+        change = paid - total
+        change_distribution = {}
+        for denom in self.denominations:
+            count, change = divmod(change, denom)
+            if count:
+                change_distribution[denom] = int(count)
+        return change_distribution
+
+class Box:
+    def __init__(self, width, height, depth, max_weight):
+        # Initialize a new box with given dimensions and maximum weight
+        self.width = width
+        self.height = height
+        self.depth = depth
+        self.max_weight = max_weight
+
+class PackingItem:
+    def __init__(self, width, height, depth, weight):
+        # Initialize a new packing item with given dimensions and weight
+        self.width = width
+        self.height = height
+        self.depth = depth
+        self.weight = weight
+
+def calculate_boxes_needed(box, packing_items):
+    # A simple algorithm to calculate the number of boxes needed
+    num_boxes = 0
+    current_width, current_height, current_depth, current_weight = 0, 0, 0, 0
+
+    for item in packing_items:
+        # Check if the current item fits in the box
+        if (current_width + item.width <= box.width and
+            current_height + item.height <= box.height and
+            current_depth + item.depth <= box.depth and
+            current_weight + item.weight <= box.max_weight):
+            # Accumulate item dimensions and weight
+            current_width += item.width
+            current_height += item.height
+            current_depth += item.depth
+            current_weight += item.weight
+        else:
+            # If item doesn't fit, use a new box
+            num_boxes += 1
+            current_width, current_height, current_depth, current_weight = item.width, item.height, item.depth, item.weight
+
+    # Add an additional box for the last set of items if needed
+    if current_width > 0 or current_height > 0 or current_depth > 0 or current_weight > 0:
+        num_boxes += 1
+
+    return num_boxes
+
+def packing_menu():
+    # Function to handle the packing process
+    print("Enter box dimensions and max weight (width, height, depth, max weight):")
+    box_input = input()  # Getting user input
+    box_width, box_height, box_depth, box_max_weight = map(float, box_input.split(' '))
+
+    # Create a Box instance
+    box = Box(box_width, box_height, box_depth, box_max_weight)
+
+    # Get the number of items to be packed
+    num_items = int(input("Enter the number of items to be packed: "))
+
+    packing_items = []
+    for _ in range(num_items):
+        print("Enter item dimensions and weight (width, height, depth, weight):")
+        item_width, item_height, item_depth, item_weight = map(float, input().split(' '))
+        packing_items.append(PackingItem(item_width, item_height, item_depth, item_weight))
+
+    # Call the function to calculate the number of boxes needed
+    num_boxes_needed = calculate_boxes_needed(box, packing_items)
+    print(f"Number of boxes needed: {num_boxes_needed}")
