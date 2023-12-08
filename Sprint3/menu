@@ -1,0 +1,85 @@
+from stock_control import StockControl,Basket,ChangeCalculator
+import datetime
+
+def add_item_menu(stock_control):
+    # Function to add an item to the stock
+    while True:
+        name = input("Enter item name: ")
+        item_type = input("Enter item type (luxury, essential, gift): ")
+        if item_type in ['luxury', 'essential', 'gift']:
+            price = float(input("Enter item price: "))
+            expiration_date = input("Enter expiration date (YYYY-MM-DD): ")
+            # Convert the expiration date from string to datetime and add the item
+            stock_control.add_item(name, item_type, price, datetime.datetime.strptime(expiration_date, '%Y-%m-%d').date())
+            break
+        else:
+            print("Invalid item type. Please enter 'luxury', 'essential', or 'gift'.")
+
+def view_items_menu(stock_control):
+    # Function to view and optionally delete items from the stock
+    stock_control.view_items()
+    delete = input("Do you want to delete an item? (yes/no): ")
+    if delete.lower() == 'yes':
+        item_id = int(input("Enter the ID of the item to delete: "))
+        stock_control.delete_item(item_id)
+
+
+
+def shopping_menu(stock_control, basket):
+    # Function for the shopping process, including adding items to basket, checkout, and handling payment
+    change_calculator = ChangeCalculator()  # Create an instance of the change calculator
+
+    while True:
+        choice = input("\nChoose an option: 1. Add to Basket, 2. Checkout, 3. Exit: ")
+        if choice == '1':
+            # Add items to the basket by item ID
+            item_id = int(input("Enter the ID of the item to add to basket: "))
+            item = stock_control.get_item_by_id(item_id)
+            if item:
+                basket.add_item(item)
+                print(f"Added {item.name} to the basket.")
+            else:
+                print("Item not found.")
+
+        elif choice == '2':
+            # Code for the checkout process
+            total_cost = basket.calculate_total()  # Calculate the total cost of items in the basket
+            print(f"Total cost: €{total_cost:.2f}")
+            
+            # Prompt for payment and calculate change
+            paid = float(input("Enter amount paid by the customer: €"))
+            change = change_calculator.calculate_change(total_cost, paid)
+            print("Change to give:")
+            for denom, count in change.items():
+                print(f"€{denom}: {count}")
+
+            basket.checkout(stock_control)  # Clear the basket after checkout
+            break
+
+        elif choice == '3':
+            # Exit the shopping menu
+            break
+
+        else:
+            print("Invalid choice. Please try again.")
+
+def main():
+    # Main function to initialize stock control and basket, and start the menu
+    stock_control = StockControl()
+    basket = Basket()
+    while True:
+        print("\n1. Add Item to Stock\n2. View Stock\n3. Shopping Menu\n4. Exit")
+        choice = input("Select an option: ")
+        if choice == '1':
+            add_item_menu(stock_control)
+        elif choice == '2':
+            view_items_menu(stock_control)
+        elif choice == '3':
+            shopping_menu(stock_control, basket)
+        elif choice == '4':
+            break
+        else:
+            print("Invalid choice. Please try again.")
+
+if __name__ == "__main__":
+    main()
