@@ -1,0 +1,37 @@
+from stock_control import StockControl
+import datetime
+
+def add_item_menu(stock_control):
+    name = input("Enter item name: ")
+    while True:
+        item_type = input("Enter item type (luxury, essential, gift): ")
+        if item_type in ['luxury', 'essential', 'gift']:
+            price = float(input("Enter item price: "))
+            expiration_date = input("Enter expiration date (YYYY-MM-DD): ")
+            # Convert string date to datetime object and add item
+            stock_control.add_item(name, item_type, price, datetime.datetime.strptime(expiration_date, '%Y-%m-%d').date())
+            break  # Break the loop if the item type is valid
+        else:
+            print("Invalid item type. Please enter 'luxury', 'essential', or 'gift'.")
+
+def view_items_menu(stock_control):
+    stock_control.view_items()
+    delete = input("Do you want to delete an item? (yes/no): ")
+    if delete.lower() == 'yes':
+        item_id = int(input("Enter the ID of the item to delete: "))
+        stock_control.delete_item(item_id)
+
+def main():
+    stock_control = StockControl()
+    while True:
+        choice = input("Choose an option: 1. Add Items, 2. View Items, 3. Exit: ")
+        if choice == '1':
+            add_item_menu(stock_control)
+        elif choice == '2':
+            view_items_menu(stock_control)
+        elif choice == '3':
+            break
+        else:
+            print("Invalid choice. Please try again.")
+
+main()
